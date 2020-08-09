@@ -21,6 +21,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import android.util.Base64
 import android.util.Log
+import android.view.View
 import android.widget.ListView
 
 
@@ -205,7 +206,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         if(mGenre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
-    }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

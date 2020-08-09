@@ -104,29 +104,29 @@ class QuestionDetailActivity : AppCompatActivity() {
             favoriteButton.visibility = View.GONE
         } else {
             favoriteButton.visibility = View.VISIBLE
-        }
 
-        val dataBaseReference = FirebaseDatabase.getInstance().reference
-        val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
+            val dataBaseReference = FirebaseDatabase.getInstance().reference
+            val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
+            favoriteRef.addChildEventListener(mEventListener2)
 
-        favoriteRef.addChildEventListener(mEventListener2)
+            favoriteButton.setOnClickListener {
 
-        favoriteButton.setOnClickListener {
+                if(flag == true){
+                    favoriteRef.setValue(null)
+                    flag = false
+                    favoriteButton.text = "いいね"
+                }else{
+                    val data = HashMap<String, String>()
+                    data["mGenre"] = mQuestion.genre.toString()
+                    data["questionUid"] = mQuestion.questionUid
 
-            if(flag == true){
-                favoriteRef.setValue(null)
-                flag = false
-                favoriteButton.text = "いいね"
-            }else{
-                val data = HashMap<String, String>()
-                data["mGenre"] = mQuestion.genre.toString()
-                data["questionUid"] = mQuestion.questionUid
-
-                favoriteRef.setValue(data)
-                flag = true
-                favoriteButton.text = "済"
+                    favoriteRef.setValue(data)
+                    flag = true
+                    favoriteButton.text = "済"
+                }
             }
         }
+
 
     }
 
@@ -158,9 +158,6 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
 
         val dataBaseReference = FirebaseDatabase.getInstance().reference
-        val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
-
-
 
         mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString()).child(mQuestion.questionUid).child(
             AnswersPATH)
