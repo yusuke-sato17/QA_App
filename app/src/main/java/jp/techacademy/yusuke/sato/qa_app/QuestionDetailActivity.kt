@@ -6,6 +6,7 @@ import android.support.design.widget.FloatingActionButton
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.ListView
+import android.R.drawable
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -23,6 +24,9 @@ class QuestionDetailActivity : AppCompatActivity() {
     private lateinit var mQuestion: Question
     private lateinit var mAdapter: QuestionDetailListAdapter
     private lateinit var mAnswerRef: DatabaseReference
+
+    val user = FirebaseAuth.getInstance().currentUser
+    var flag = false
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
@@ -62,11 +66,30 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user == null){
+            favoriteButton.hide()
+        } else {
+            favoriteButton.show()
+        }
+//        if (flag == true) {
+//            favoriteButton.setImageDrawable(btn_star_big_on)
+//        } else {
+//            favoriteButton.setImageDrawable(btn_star_big_off)
+//        }
+
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_question_detail)
 
         val extras = intent.extras
+
         mQuestion = extras.get("question") as Question
 
         title = mQuestion.title
@@ -89,6 +112,24 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
 
         val dataBaseReference = FirebaseDatabase.getInstance().reference
+        val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
+
+
+        favoriteButton.setOnClickListener {
+
+            if(flag == true){
+                favoriteRef.setValue(null)
+                flag = false
+            }else{
+                val data = HashMap<String, String>()
+                data["mGenre"] = mQuestion.genre.toString()
+                data["questionUid"] = mQuestion.questionUid
+
+                favoriteRef.setValue(data)
+                flag = true
+            }
+        }
+
         mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString()).child(mQuestion.questionUid).child(
             AnswersPATH)
         mAnswerRef.addChildEventListener(mEventListener)

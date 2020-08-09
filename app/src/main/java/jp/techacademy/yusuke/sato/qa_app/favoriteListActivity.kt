@@ -1,12 +1,12 @@
 package jp.techacademy.yusuke.sato.qa_app
 
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
+import java.io.Serializable
+import java.util.ArrayList
 
-class favoriteListActivity : AppCompatActivity() {
+class favoriteList(val title: String, val body: String, val name: String, val uid: String, val questionUid: String, val genre: Int, bytes: ByteArray, val answers: ArrayList<Answer>) : Serializable {
+    val imageBytes: ByteArray
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_favorite_list)
+    init {
+        imageBytes = bytes.clone()
     }
 }

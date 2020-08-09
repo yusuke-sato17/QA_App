@@ -19,13 +19,14 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import android.util.Base64  //追加する
+import android.util.Base64
 import android.widget.ListView
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mToolbar: Toolbar
     private var mGenre = 0
+    private var mFavorite = "0"
 
     private lateinit var mDatabaseReference: DatabaseReference
     private lateinit var mListView: ListView
@@ -33,6 +34,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var mAdapter: QuestionsListAdapter
 
     private var mGenreRef: DatabaseReference? = null
+    private var mFavoriteRef: DatabaseReference? = null
+
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
@@ -64,6 +67,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             val question = Question(title, body, name, uid, dataSnapshot.key ?: "",
                 mGenre, bytes, answerArrayList)
+
             mQuestionArrayList.add(question)
             mAdapter.notifyDataSetChanged()
         }
@@ -89,7 +93,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     mAdapter.notifyDataSetChanged()
                 }
             }
-
         }
 
         override fun onChildRemoved(p0: DataSnapshot) {
@@ -102,6 +105,29 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         override fun onCancelled(p0: DatabaseError) {
 
+        }
+    }
+
+
+
+    private val mEventListener2 = object : ChildEventListener {
+        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+            val map = dataSnapshot.value as Map<String, String>
+
+            val questionUid = map["questionUid"] ?: ""
+            val mGenre = map["mGenre"] ?: ""
+
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre).child(questionUid)
+            mGenreRef!!.addChildEventListener(mEventListener)
+
+        }
+        override fun onChildChanged(dataSnapshot: DataSnapshot, s:String?) {
+        }
+        override fun onChildRemoved(p0: DataSnapshot) {
+        }
+        override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+        }
+        override fun onCancelled(p0: DatabaseError) {
         }
     }
 
@@ -163,7 +189,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         if(mGenre == 0) {
             onNavigationItemSelected(navigationView.menu.getItem(0))
-        }
+    }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -186,19 +212,29 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
+        val user = FirebaseAuth.getInstance().currentUser
 
         if (id == R.id.nav_hobby) {
             mToolbar.title = "趣味"
             mGenre = 1
+            mFavorite = "0"
         } else if (id == R.id.nav_life) {
             mToolbar.title = "生活"
             mGenre = 2
+            mFavorite = "0"
         } else if (id == R.id.nav_health) {
             mToolbar.title = "健康"
             mGenre = 3
+            mFavorite = "0"
         } else if (id == R.id.nav_compter) {
             mToolbar.title = "コンピューター"
             mGenre = 4
+            mFavorite = "0"
+        } else if (id == R.id.nav_favorite) {
+            mToolbar.title = "お気に入り"
+            mGenre = 0
+            mFavorite = user!!.uid
+
         }
 
         val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
@@ -210,10 +246,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         if (mGenreRef != null) {
             mGenreRef!!.removeEventListener(mEventListener)
-        }
-        mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
-        mGenreRef!!.addChildEventListener(mEventListener)
+            return true
 
-        return true
+        } else if (mFavorite == "0") {
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
+            mGenreRef!!.addChildEventListener(mEventListener)
+            return true
+
+        } else {
+            mFavoriteRef = mDatabaseReference.child(FavoritesPATH).child(mFavorite.toString())
+            mFavoriteRef!!.addChildEventListener(mEventListener2)
+
+            return true
+        }
     }
 }
