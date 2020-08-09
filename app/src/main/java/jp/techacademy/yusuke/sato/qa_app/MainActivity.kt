@@ -20,13 +20,14 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import android.util.Base64
+import android.util.Log
 import android.widget.ListView
+
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mToolbar: Toolbar
     private var mGenre = 0
-    private var mFavorite = "0"
 
     private lateinit var mDatabaseReference: DatabaseReference
     private lateinit var mListView: ListView
@@ -36,19 +37,21 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var mGenreRef: DatabaseReference? = null
     private var mFavoriteRef: DatabaseReference? = null
 
+    private var favoritelist = arrayListOf<String>()
 
     private val mEventListener = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+            Log.d("loglog", "おはよう")
             val map = dataSnapshot.value as Map<String, String>
-            val title = map["title"] ?: ""
-            val body = map["body"] ?: ""
-            val name = map["name"] ?: ""
-            val uid = map["uid"] ?: ""
-            val imageString = map["image"] ?: ""
-            val bytes =
-                if (imageString.isNotEmpty()) {
-                    Base64.decode(imageString, Base64.DEFAULT)
-                } else {
+                    val title = map["title"] ?: ""
+                    val body = map["body"] ?: ""
+                    val name = map["name"] ?: ""
+                    val uid = map["uid"] ?: ""
+                    val imageString = map["image"] ?: ""
+                    val bytes =
+                        if (imageString.isNotEmpty()) {
+                            Base64.decode(imageString, Base64.DEFAULT)
+                        } else {
                     byteArrayOf()
                 }
 
@@ -68,8 +71,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val question = Question(title, body, name, uid, dataSnapshot.key ?: "",
                 mGenre, bytes, answerArrayList)
 
-            mQuestionArrayList.add(question)
-            mAdapter.notifyDataSetChanged()
+            if(flag == 0) {
+                mQuestionArrayList.add(question)
+                Log.d("loglog", title)
+                mAdapter.notifyDataSetChanged()
+            } else {
+                for (item in favoritelist){
+                    if (item.equals(dataSnapshot.key)) {
+                        mQuestionArrayList.add(question)
+                        Log.d("loglog", title)
+                        mAdapter.notifyDataSetChanged()
+                    }
+                }
+
+            }
         }
 
         override fun onChildChanged(dataSnapshot: DataSnapshot, s:String?) {
@@ -112,13 +127,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private val mEventListener2 = object : ChildEventListener {
         override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+
             val map = dataSnapshot.value as Map<String, String>
 
             val questionUid = map["questionUid"] ?: ""
-            val mGenre = map["mGenre"] ?: ""
+            val genre = map["genre"] ?: ""
+            Log.d("loglog", questionUid)
 
-            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre).child(questionUid)
-            mGenreRef!!.addChildEventListener(mEventListener)
+            favoritelist.add(questionUid.toString())
 
         }
         override fun onChildChanged(dataSnapshot: DataSnapshot, s:String?) {
@@ -210,6 +226,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return super.onOptionsItemSelected(item)
     }
 
+    var flag = 0
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
         val user = FirebaseAuth.getInstance().currentUser
@@ -217,23 +235,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (id == R.id.nav_hobby) {
             mToolbar.title = "趣味"
             mGenre = 1
-            mFavorite = "0"
+            flag = 0
         } else if (id == R.id.nav_life) {
             mToolbar.title = "生活"
             mGenre = 2
-            mFavorite = "0"
+            flag = 0
         } else if (id == R.id.nav_health) {
             mToolbar.title = "健康"
             mGenre = 3
-            mFavorite = "0"
+            flag = 0
         } else if (id == R.id.nav_compter) {
             mToolbar.title = "コンピューター"
             mGenre = 4
-            mFavorite = "0"
+            flag = 0
         } else if (id == R.id.nav_favorite) {
             mToolbar.title = "お気に入り"
-            mGenre = 0
-            mFavorite = user!!.uid
+            mGenre = 10
+            flag = 1
 
         }
 
@@ -246,18 +264,31 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         if (mGenreRef != null) {
             mGenreRef!!.removeEventListener(mEventListener)
-            return true
+        }
 
-        } else if (mFavorite == "0") {
-            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
-            mGenreRef!!.addChildEventListener(mEventListener)
-            return true
+        if (mGenre == 10) {
 
-        } else {
-            mFavoriteRef = mDatabaseReference.child(FavoritesPATH).child(mFavorite.toString())
+            favoritelist.clear()
+
+            mFavoriteRef = mDatabaseReference.child(FavoritesPATH).child(user!!.uid)
             mFavoriteRef!!.addChildEventListener(mEventListener2)
 
-            return true
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child("1")
+            mGenreRef!!.addChildEventListener(mEventListener)
+
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child("2")
+            mGenreRef!!.addChildEventListener(mEventListener)
+
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child("3")
+            mGenreRef!!.addChildEventListener(mEventListener)
+
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child("4")
+            mGenreRef!!.addChildEventListener(mEventListener)
+
+        } else {
+            mGenreRef = mDatabaseReference.child(ContentsPATH).child(mGenre.toString())
+            mGenreRef!!.addChildEventListener(mEventListener)
         }
+        return true
     }
 }

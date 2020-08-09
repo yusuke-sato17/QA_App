@@ -25,7 +25,7 @@
         android:layout_margin="16dp"
         android:src="@drawable/plus" />
 
-    <android.support.design.widget.FloatingActionButton
+    <Button
         android:id="@+id/favoriteButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -33,6 +33,6 @@
         android:layout_alignParentBottom="true"
         android:layout_margin="16dp"
         android:visibility="gone"
-        android:src="@android:drawable/btn_star_big_off"/>
+        android:text="好"/>
 
 </RelativeLayout>

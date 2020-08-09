@@ -17,6 +17,8 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_question_detail.*
 
+
+
 import java.util.HashMap
 
 class QuestionDetailActivity : AppCompatActivity() {
@@ -66,21 +68,65 @@ class QuestionDetailActivity : AppCompatActivity() {
         }
     }
 
+    private val mEventListener2 = object : ChildEventListener {
+        override fun onChildAdded(dataSnapshot: DataSnapshot, s: String?) {
+            flag = true
+
+            if (flag == true) {
+                favoriteButton.text = "済"
+            } else {
+                favoriteButton.text = "いいね"
+            }
+        }
+
+        override fun onChildChanged(dataSnapshot: DataSnapshot, s: String?) {
+
+        }
+
+        override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+
+        }
+
+        override fun onChildMoved(dataSnapshot: DataSnapshot, s: String?) {
+
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         val user = FirebaseAuth.getInstance().currentUser
 
         if (user == null){
-            favoriteButton.hide()
+            favoriteButton.visibility = View.GONE
         } else {
-            favoriteButton.show()
+            favoriteButton.visibility = View.VISIBLE
         }
-//        if (flag == true) {
-//            favoriteButton.setImageDrawable(btn_star_big_on)
-//        } else {
-//            favoriteButton.setImageDrawable(btn_star_big_off)
-//        }
 
+        val dataBaseReference = FirebaseDatabase.getInstance().reference
+        val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
+
+        favoriteRef.addChildEventListener(mEventListener2)
+
+        favoriteButton.setOnClickListener {
+
+            if(flag == true){
+                favoriteRef.setValue(null)
+                flag = false
+                favoriteButton.text = "いいね"
+            }else{
+                val data = HashMap<String, String>()
+                data["mGenre"] = mQuestion.genre.toString()
+                data["questionUid"] = mQuestion.questionUid
+
+                favoriteRef.setValue(data)
+                flag = true
+                favoriteButton.text = "済"
+            }
+        }
 
     }
 
@@ -115,20 +161,6 @@ class QuestionDetailActivity : AppCompatActivity() {
         val favoriteRef = dataBaseReference.child(FavoritesPATH).child(user!!.uid).child(mQuestion.questionUid)
 
 
-        favoriteButton.setOnClickListener {
-
-            if(flag == true){
-                favoriteRef.setValue(null)
-                flag = false
-            }else{
-                val data = HashMap<String, String>()
-                data["mGenre"] = mQuestion.genre.toString()
-                data["questionUid"] = mQuestion.questionUid
-
-                favoriteRef.setValue(data)
-                flag = true
-            }
-        }
 
         mAnswerRef = dataBaseReference.child(ContentsPATH).child(mQuestion.genre.toString()).child(mQuestion.questionUid).child(
             AnswersPATH)
